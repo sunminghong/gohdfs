@@ -147,14 +147,14 @@ func (c *Client) CopyToLocal(src string, dst string) error {
 }
 
 // CopyToRemote copies the local file specified by src to the HDFS file at dst.
-func (c *Client) CopyToRemote(src string, dst string) error {
+func (c *Client) CopyToRemote(src string, dst string, perm os.FileMode) error {
 	local, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer local.Close()
 
-	remote, err := c.Create(dst)
+	remote, err := c.CreateWithPerm(dst, perm)
 	if err != nil {
 		return err
 	}

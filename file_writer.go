@@ -46,6 +46,29 @@ func (c *Client) Create(name string) (*FileWriter, error) {
 	return c.CreateFile(name, replication, blockSize, 0644)
 }
 
+// Create opens a new file in HDFS with the give permissions and the default 
+// replication, block size, and returns an io.WriteCloser for writing
+// to it. Because of the way that HDFS writes are buffered and acknowledged
+// asynchronously, it is very important that Close is called after all data has
+// been written.
+func (c *Client) CreateWithPerm(name string, perm os.FileMode) (*FileWriter, error) {
+	_, err := c.getFileInfo(name)
+	if err == nil {
+		return nil, &os.PathError{"create", name, os.ErrExist}
+	} else if !os.IsNotExist(err) {
+		return nil, &os.PathError{"create", name, err}
+	}
+
+	defaults, err := c.fetchDefaults()
+	if err != nil {
+		return nil, err
+	}
+
+	replication := int(defaults.GetReplication())
+	blockSize := int64(defaults.GetBlockSize())
+	return c.CreateFile(name, replication, blockSize, perm)
+}
+
 // CreateFile opens a new file in HDFS with the given replication, block size,
 // and permissions, and returns an io.WriteCloser for writing to it. Because of
 // the way that HDFS writes are buffered and acknowledged asynchronously, it is
